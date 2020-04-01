@@ -16,7 +16,8 @@ ij_smart_tabs = true
 # ij_wrap_on_typing = false
 
 [*.conf]
-# indent_size = 2
+indent_style = space
+indent_size = 2
 # tab_width = 2
 # ij_continuation_indent_size = 2
 # ij_hocon_keep_blank_lines_before_right_brace = 2
@@ -305,7 +306,8 @@ ij_smart_tabs = true
 # ij_javascript_assignment_wrap = off
 # ij_javascript_binary_operation_sign_on_next_line = false
 # ij_javascript_binary_operation_wrap = off
-# ij_javascript_blacklist_imports = rxjs/Rx,node_modules/**/*,@angular/material,@angular/material/typings/**,~/node_modules/**/*,@/node_modules/**/*
+# ij_javascript_blacklist_imports = rxjs/Rx,node_modules/**/*,@angular/material,@angular/material/typings/**,
+# ~/node_modules/**/*,@/node_modules/**/*
 # ij_javascript_blank_lines_after_imports = 1
 # ij_javascript_blank_lines_around_class = 1
 # ij_javascript_blank_lines_around_field = 0
@@ -545,7 +547,8 @@ indent_style = tab
 # ij_typescript_assignment_wrap = off
 # ij_typescript_binary_operation_sign_on_next_line = false
 # ij_typescript_binary_operation_wrap = off
-# ij_typescript_blacklist_imports = rxjs/Rx,node_modules/**/*,@angular/material,@angular/material/typings/**,~/node_modules/**/*,@/node_modules/**/*
+# ij_typescript_blacklist_imports = rxjs/Rx,node_modules/**/*,@angular/material,@angular/material/typings/**,
+# ~/node_modules/**/*,@/node_modules/**/*
 # ij_typescript_blank_lines_after_imports = 1
 # ij_typescript_blank_lines_around_class = 1
 # ij_typescript_blank_lines_around_field = 0
