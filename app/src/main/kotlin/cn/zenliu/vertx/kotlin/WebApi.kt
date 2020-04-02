@@ -1,18 +1,14 @@
 package cn.zenliu.vertx.kotlin
 
-import cn.zenliu.vertx.kotlin.domain.Domain
-import cn.zenliu.vertx.kotlin.domain.Domain.client
-import cn.zenliu.vertx.kotlin.domain.Domain.dao
-import cn.zenliu.vertx.kotlin.domain.Domain.dsl
-import cn.zenliu.vertx.kotlin.model.Tables.DOCTOR
-import cn.zenliu.vertx.kotlin.model.tables.daos.DoctorDao
-import io.vertx.core.http.HttpServer
-import io.vertx.core.json.Json
-import io.vertx.core.json.JsonObject
-import io.vertx.core.logging.Logger
-import io.vertx.core.logging.LoggerFactory
-import io.vertx.ext.web.Router
-import io.vertx.kotlin.coroutines.CoroutineVerticle
+import cn.zenliu.vertx.kotlin.reactive.*
+import cn.zenliu.vertx.kotlin.reactive.Database
+import cn.zenliu.vertx.kotlin.reactive.Database.async
+import io.vertx.core.http.*
+import io.vertx.core.json.*
+import io.vertx.core.logging.*
+import io.vertx.ext.web.*
+import io.vertx.kotlin.coroutines.*
+import org.jetbrains.exposed.sql.*
 
 /**
  *
@@ -29,7 +25,7 @@ class WebApi : CoroutineVerticle() {
 
 	override suspend fun start() {
 		register()
-		Domain.setVertx(vertx)
+		Database.init(vertx)
 		server.requestHandler(router).listen(port)
 		logger.info("service listen on $port")
 	}
@@ -42,11 +38,11 @@ class WebApi : CoroutineVerticle() {
 	private fun register() {
 		router.get("/hello")
 			.handler { ctx ->
-				client.query("SELECT * From doctor limit 1")
-					.execute {
-						val r=it.result()
-						ctx.response().end(Json.encode(r))
-					}
+				User.select {
+					User.id eq 1
+				}.async {
+					ctx.response().end(Json.encode(it.result()))
+				}
 			}.failureHandler {
 				logger.error("error", it.failure())
 			}

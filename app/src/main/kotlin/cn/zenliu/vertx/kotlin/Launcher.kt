@@ -2,26 +2,20 @@
 
 package cn.zenliu.vertx.kotlin
 
-import cn.zenliu.vertx.kotlin.BusEvents.CONFIG_UPDATE
-import io.vertx.config.ConfigRetriever
-import io.vertx.config.ConfigRetrieverOptions
-import io.vertx.config.ConfigStoreOptions
-import io.vertx.core.Launcher
-import io.vertx.core.Vertx
-import io.vertx.core.VertxOptions
-import io.vertx.core.json.JsonObject
-import io.vertx.core.logging.LoggerFactory
-import io.vertx.core.logging.SLF4JLogDelegateFactory
-import io.vertx.kotlin.core.json.json
-import io.vertx.kotlin.core.json.obj
+import cn.zenliu.vertx.kotlin.BusEvents.*
+import com.typesafe.config.*
+import io.vertx.config.*
+import io.vertx.core.*
+import io.vertx.core.json.*
+import io.vertx.core.logging.*
+import io.vertx.kotlin.core.json.*
+import kotlin.collections.set
 
 class AppLauncher : Launcher() {
 
 	override fun dispatch(args: Array<out String>?) {
 		System.setProperty(LoggerFactory.LOGGER_DELEGATE_FACTORY_CLASS_NAME, SLF4JLogDelegateFactory::class.java.name)
-		loadConfig {
-			super.dispatch(args)
-		}
+		super.dispatch(args)
 	}
 
 	override fun beforeStartingVertx(options: VertxOptions?) {
@@ -56,9 +50,12 @@ class AppLauncher : Launcher() {
 			}
 		))
 		private lateinit var gRetriever: ConfigRetriever
-		private lateinit var gConfig: JsonObject
-		val isConfigReady get() = this::gConfig.isInitialized
-		val config by lazy { gConfig }
+
+		val config by lazy {
+			ConfigFactory.load("vertx.conf").resolve().root().render(ConfigRenderOptions.concise()
+				.setJson(true).setComments(false).setFormatted(false)).let { JsonObject(it) }
+		}
+
 		private fun VertxOptions.toJson() = run {
 			val json = mutableMapOf<String, Any?>()
 			val obj = this
@@ -125,8 +122,7 @@ class AppLauncher : Launcher() {
 			}
 		}
 
-		private fun loadConfig(then: () -> Unit) {
-			val vertx = Vertx.vertx()
+		/*private fun loadConfig(vertx: Vertx, then: () -> Unit) {
 			val retriever = ConfigRetriever.create(vertx,
 				ConfigRetrieverOptions()
 					.addStore(configStore["vertx"]))
@@ -139,24 +135,22 @@ class AppLauncher : Launcher() {
 						.let { cf -> configStore.putAll(cf) }
 				}
 				retriever.close()
-				vertx.close()
 				then.invoke()
 			}
-		}
+		}*/
 
 		private fun mergeVertxOption(options: VertxOptions?, then: VertxOptions?.() -> Unit) {
 			when {
-				!isConfigReady -> options
-				gConfig.containsKey("vertx") && options != null
-				-> VertxOptions(options.toJson().mergeIn(gConfig.getJsonObject("vertx", JsonObject())))
-				gConfig.containsKey("vertx") && options == null
-				-> VertxOptions(gConfig.getJsonObject("vertx", JsonObject()))
+				config.containsKey("global") && options != null
+				-> VertxOptions(options.toJson().mergeIn(config.getJsonObject("global", JsonObject()), true))
+				config.containsKey("global") && options == null
+				-> VertxOptions(config.getJsonObject("global", JsonObject()))
 				else -> options
 			}.let { then.invoke(it) }
 		}
 
 		private fun mergeConfig(config: JsonObject?, then: JsonObject?.() -> Unit) {
-			then(config?.mergeIn(gConfig) ?: gConfig)
+			then(config?.mergeIn(this.config) ?: this.config)
 		}
 
 	}

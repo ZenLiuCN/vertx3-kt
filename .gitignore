@@ -8,3 +8,5 @@ dependency-reduced-pom.xml
 .keep
 schema_backup
 lipei.zip
+!/.idea/inspectionProfiles/Project_Default.xml
+!/.idea/dictionaries/Administrator.xml
