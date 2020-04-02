@@ -40,13 +40,31 @@
         <caffeine.version>2.8.1</caffeine.version>
         <junit.version>5.5.2</junit.version>
         <opencsv.version>5.1</opencsv.version>
+
         <jooq.version>3.13.1</jooq.version>
+	    <vertx-jooq-generate.version>5.1.0</vertx-jooq-generate.version>
+
         <jaxb-api.version>2.3.1</jaxb-api.version>
         <pgng.version>0.8.3</pgng.version>
         <pgstd.version>42.2.10</pgstd.version>
+
         <vertx.version>3.9.0</vertx.version>
         <!-- configuration -->
-        <skip.jooq.gen>true</skip.jooq.gen>
+        <jooq.gen.skip>true</jooq.gen.skip>
+	    <jooq.gen.driver>org.postgresql.Driver</jooq.gen.driver>
+	    <jooq.gen.user>db_user</jooq.gen.user>
+	    <jooq.gen.password>db_password</jooq.gen.password>
+	    <jooq.gen.jdbc>some_jdbc_url</jooq.gen.jdbc>
+	    <jooq.gen.schema>some_schema</jooq.gen.schema>
+	    <jooq.gen.database>org.jooq.meta.postgres.PostgresDatabase</jooq.gen.database>
+	    <jooq.gen.package>some_package</jooq.gen.package>
+	    <jooq.gen.output>src/main/java</jooq.gen.output>
+	    <jooq.gen.dao>true</jooq.gen.dao>
+	    <jooq.gen.interface>true</jooq.gen.interface>
+	    <jooq.gen.pojo>true</jooq.gen.pojo>
+	    <!-- config vertx -->
+	    <vertx.verticle>nothing</vertx.verticle>
+	    <vertx.launcher>io.vertx.core.Launcher</vertx.launcher>
         <!-- plugins -->
 
         <build-helper-maven-plugin.version>3.0.0</build-helper-maven-plugin.version>
@@ -66,7 +84,18 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
+	        <!-- jooq generate -->
+	        <dependency>
+		        <groupId>io.github.jklingsporn</groupId>
+		        <artifactId>vertx-jooq-generate</artifactId>
+		        <scope>runtime</scope>
+		        <version>${vertx-jooq-generate.version}</version>
+	        </dependency>
+	        <dependency>
+		        <groupId>io.github.jklingsporn</groupId>
+		        <artifactId>vertx-jooq-classic-reactive</artifactId>
+		        <version>${vertx-jooq-generate.version}</version>
+	        </dependency>
             <!-- database drivers -->
             <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
             <dependency>
@@ -497,7 +526,6 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
-
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
@@ -551,10 +579,10 @@
                     </executions>
                     <configuration>
                         <!--    <mainClass>io.ktor.server.netty.EngineMain</mainClass>-->
-                        <mainClass>io.vertx.core.Launcher</mainClass>
+                        <mainClass>${vertx.launcher}</mainClass>
                         <arguments>
                             <argument>run</argument>
-                            <argument>${main.verticle}</argument>
+                            <argument>${vertx.verticle}</argument>
                         </arguments>
 
                     </configuration>
@@ -615,19 +643,18 @@
                             <transformer
                                     implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                 <manifestEntries>
-                                    <Main-Class>io.vertx.core.Launcher</Main-Class>
-                                    <Main-Verticle>${main.verticle}</Main-Verticle>
+                                    <Main-Class>${vertx.launcher}</Main-Class>
+                                    <Main-Verticle>${vertx.verticle}</Main-Verticle>
                                 </manifestEntries>
                             </transformer>
                             <transformer
                                     implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                 <resource>META-INF/services/io.vertx.core.spi.VerticleFactory</resource>
                             </transformer>
-
                             <transformer
                                     implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             <!-- for ktor -->
-                            <!--         <transformer
+                            <!--  <transformer
                                              implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                          <mainClass>io.ktor.server.netty.EngineMain</mainClass>
                                      </transformer>-->
@@ -646,6 +673,97 @@
                         </execution>
                     </executions>
                 </plugin>
+	            <plugin>
+		            <groupId>org.jooq</groupId>
+		            <artifactId>jooq-codegen-maven</artifactId>
+		            <version>${jooq.version}</version>
+		            <executions>
+			            <execution>
+				            <id>jooq-codegen</id>
+				            <phase>generate-sources</phase>
+				            <goals>
+					            <goal>generate</goal>
+				            </goals>
+			            </execution>
+		            </executions>
+		            <dependencies>
+			            <dependency>
+				            <groupId>io.github.jklingsporn</groupId>
+				            <artifactId>vertx-jooq-generate</artifactId>
+				            <version>${vertx-jooq-generate.version}</version>
+			            </dependency>
+			            <dependency>
+				            <groupId>org.postgresql</groupId>
+				            <artifactId>postgresql</artifactId>
+				            <version>${pgstd.version}</version>
+			            </dependency>
+			            <dependency>
+				            <groupId>mysql</groupId>
+				            <artifactId>mysql-connector-java</artifactId>
+				            <version>${mysql.version}</version>
+			            </dependency>
+		            </dependencies>
+		            <configuration>
+			            <skip>${jooq.gen.skip}</skip>
+			            <logging>INFO</logging>
+			            <jdbc>
+				            <driver>${jooq.gen.driver}</driver>
+				            <url>${jooq.gen.jdbc}</url>
+				            <user>${jooq.gen.user}</user>
+				            <password>${jooq.gen.password}</password>
+			            </jdbc>
+			            <generator>
+<!--				            <name>org.jooq.codegen.JavaGenerator</name>-->
+				            <name>io.github.jklingsporn.vertx.jooq.generate.classic.ClassicReactiveVertxGenerator</name>
+				            <database>
+					            <name>${jooq.gen.database}</name>
+					            <includes>.*</includes>
+					            <inputSchema>${jooq.gen.schema}</inputSchema>
+					            <unsignedTypes>false</unsignedTypes>
+					            <outputSchemaToDefault>true</outputSchemaToDefault>
+					            <forcedTypes>
+						            <!-- Convert tinyint to boolean -->
+						            <forcedType>
+							            <name>BOOLEAN</name>
+							            <includeTypes>(?i:TINYINT)</includeTypes>
+							            <objectType>ALL</objectType>
+						            </forcedType>
+<!--						             Convert varchar column with name 'someJsonObject' to a io.vertx.core.json.JsonObject-->
+						      <!--      <forcedType>
+							            <userType>io.vertx.core.json.JsonObject</userType>
+							            <converter>io.github.jklingsporn.vertx.jooq.shared.JsonObjectConverter</converter>
+&lt;!&ndash;							            <expression>someJsonObject</expression>&ndash;&gt;
+							            <includeTypes>jsonb</includeTypes>
+							            <objectType>ALL</objectType>
+						            </forcedType>-->
+						            <!-- Convert varchar column with name 'someJsonArray' to a io.vertx.core.json.JsonArray-->
+						           <!-- <forcedType>
+							            <userType>io.vertx.core.json.JsonArray</userType>
+							            <converter>io.github.jklingsporn.vertx.jooq.shared.JsonArrayConverter</converter>
+&lt;!&ndash;							            <expression>someJsonArray</expression>&ndash;&gt;
+							            <includeTypes>json</includeTypes>
+							            <objectType>ALL</objectType>
+						            </forcedType>-->
+					            </forcedTypes>
+				            </database>
+				            <generate>
+					            <daos>${jooq.gen.dao}</daos>
+					            <interfaces>${jooq.gen.interface}</interfaces>
+					            <pojos>${jooq.gen.pojo}</pojos>
+					            <javaTimeTypes>true</javaTimeTypes>
+					            <springAnnotations>false</springAnnotations>
+					            <generatedAnnotation>false</generatedAnnotation>
+				            </generate>
+				            <target>
+					            <packageName>${jooq.gen.package}</packageName>
+					            <directory>${jooq.gen.output}</directory>
+				            </target>
+				            <strategy>
+					            <name>io.github.jklingsporn.vertx.jooq.generate.VertxGeneratorStrategy</name>
+				            </strategy>
+			            </generator>
+		            </configuration>
+	            </plugin>
             </plugins>
         </pluginManagement>
         <plugins>

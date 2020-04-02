@@ -1,13 +1,18 @@
 package cn.zenliu.vertx.kotlin
 
-import io.vertx.config.*
-import io.vertx.core.http.*
-import io.vertx.core.json.*
-import io.vertx.core.logging.*
-import io.vertx.ext.web.*
-import io.vertx.kotlin.core.json.*
-import io.vertx.kotlin.coroutines.*
-import java.time.*
+import cn.zenliu.vertx.kotlin.domain.Domain
+import cn.zenliu.vertx.kotlin.domain.Domain.client
+import cn.zenliu.vertx.kotlin.domain.Domain.dao
+import cn.zenliu.vertx.kotlin.domain.Domain.dsl
+import cn.zenliu.vertx.kotlin.model.Tables.DOCTOR
+import cn.zenliu.vertx.kotlin.model.tables.daos.DoctorDao
+import io.vertx.core.http.HttpServer
+import io.vertx.core.json.Json
+import io.vertx.core.json.JsonObject
+import io.vertx.core.logging.Logger
+import io.vertx.core.logging.LoggerFactory
+import io.vertx.ext.web.Router
+import io.vertx.kotlin.coroutines.CoroutineVerticle
 
 /**
  *
@@ -16,34 +21,17 @@ class WebApi : CoroutineVerticle() {
 	private val router: Router by lazy { Router.router(vertx) }
 	private val server: HttpServer by lazy { vertx.createHttpServer() }
 	private val logger: Logger by lazy { LoggerFactory.getLogger(this::class.java) }
-	private lateinit var conf: JsonObject
-	private val port get() = conf.get<JsonObject>("http").getInteger("port", 8080)
-	private val retriever by lazy {
-		ConfigRetriever.create(vertx,
-			ConfigRetrieverOptions()
-				.addStore(
-					ConfigStoreOptions(
-						json {
-							obj(
-								"type" to "file",
-								"format" to "hocon",
-								"config" to obj {
-									put("path", "app.conf")
-								}
-							)
-
-						}
-					)))
-	}
-
+	private val port
+		get() = config
+			.getJsonObject("webApi", JsonObject())
+			.getJsonObject("http", JsonObject())
+			.getInteger("port", 8080)
 
 	override suspend fun start() {
-		retriever.getConfig {
-			conf = it.result()
-			register()
-			server.requestHandler(router).listen(port)
-			logger.info("service listen on $port")
-		}
+		register()
+		Domain.setVertx(vertx)
+		server.requestHandler(router).listen(port)
+		logger.info("service listen on $port")
 	}
 
 	override suspend fun stop() {
@@ -54,7 +42,13 @@ class WebApi : CoroutineVerticle() {
 	private fun register() {
 		router.get("/hello")
 			.handler { ctx ->
-				ctx.response().end("hello${Instant.now().atOffset(ZoneOffset.of("+8"))}")
+				client.query("SELECT * From doctor limit 1")
+					.execute {
+						val r=it.result()
+						ctx.response().end(Json.encode(r))
+					}
+			}.failureHandler {
+				logger.error("error", it.failure())
 			}
 	}
 }
