@@ -70,9 +70,9 @@
         <jooq.gen.database>org.jooq.meta.postgres.PostgresDatabase</jooq.gen.database>
         <jooq.gen.package>some_package</jooq.gen.package>
         <jooq.gen.output>src/main/java</jooq.gen.output>
-        <jooq.gen.dao>true</jooq.gen.dao>
-        <jooq.gen.interface>true</jooq.gen.interface>
-        <jooq.gen.pojo>true</jooq.gen.pojo>
+        <jooq.gen.dao>false</jooq.gen.dao>
+        <jooq.gen.interface>false</jooq.gen.interface>
+        <jooq.gen.pojo>false</jooq.gen.pojo>
         <!-- config vertx -->
         <vertx.verticle>nothing</vertx.verticle>
         <vertx.launcher>io.vertx.core.Launcher</vertx.launcher>
@@ -698,11 +698,11 @@
                         </execution>
                     </executions>
                     <dependencies>
-                        <dependency>
+  <!--                      <dependency>
                             <groupId>io.github.jklingsporn</groupId>
                             <artifactId>vertx-jooq-generate</artifactId>
                             <version>${vertx-jooq-generate.version}</version>
-                        </dependency>
+                        </dependency>-->
                         <dependency>
                             <groupId>org.postgresql</groupId>
                             <artifactId>postgresql</artifactId>
@@ -724,8 +724,8 @@
                             <password>${jooq.gen.password}</password>
                         </jdbc>
                         <generator>
-                            <!--				            <name>org.jooq.codegen.JavaGenerator</name>-->
-                            <name>io.github.jklingsporn.vertx.jooq.generate.classic.ClassicReactiveVertxGenerator</name>
+                            <name>org.jooq.codegen.JavaGenerator</name>
+<!--                            <name>io.github.jklingsporn.vertx.jooq.generate.classic.ClassicReactiveVertxGenerator</name>-->
                             <database>
                                 <name>${jooq.gen.database}</name>
                                 <includes>.*</includes>
@@ -769,9 +769,9 @@
                                 <packageName>${jooq.gen.package}</packageName>
                                 <directory>${jooq.gen.output}</directory>
                             </target>
-                            <strategy>
+                         <!--   <strategy>
                                 <name>io.github.jklingsporn.vertx.jooq.generate.VertxGeneratorStrategy</name>
-                            </strategy>
+                            </strategy>-->
                         </generator>
                     </configuration>
                 </plugin>

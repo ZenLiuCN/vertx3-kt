@@ -1,20 +1,33 @@
 package cn.zenliu.vertx.kotlin.reactive
 
-import cn.zenliu.vertx.kotlin.*
-import io.vertx.core.*
-import io.vertx.kotlin.core.json.*
-import io.vertx.kotlin.pgclient.*
-import io.vertx.kotlin.sqlclient.*
-import io.vertx.pgclient.*
-import io.vertx.sqlclient.*
-import kotlinx.coroutines.*
-import kotlin.reflect.*
+import cn.zenliu.vertx.kotlin.AppLauncher
+import io.vertx.core.Vertx
+import io.vertx.kotlin.core.json.get
+import io.vertx.kotlin.pgclient.pgConnectOptionsOf
+import io.vertx.kotlin.sqlclient.beginAwait
+import io.vertx.kotlin.sqlclient.executeAwait
+import io.vertx.kotlin.sqlclient.poolOptionsOf
+import io.vertx.pgclient.PgPool
+import io.vertx.sqlclient.Pool
+import io.vertx.sqlclient.Row
+import io.vertx.sqlclient.SqlClient
+import io.vertx.sqlclient.Transaction
+import io.vertx.sqlclient.impl.ListTuple
+import kotlinx.coroutines.CoroutineScope
+import org.jooq.DSLContext
+import org.jooq.ResultQuery
+import org.jooq.SQLDialect.POSTGRES
+import org.jooq.conf.Settings
+import org.jooq.conf.StatementType
+import org.jooq.impl.DSL
+import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 
 object Database {
 	private lateinit var vertx: Vertx
 	private lateinit var scope: CoroutineScope
-	val client: SqlClient by lazy {
+	val client: Pool by lazy {
 		val connOpt = AppLauncher.config.getJsonObject("postgres")
 		val poolOpt = connOpt.getJsonObject("pool")
 		PgPool.pool(
@@ -75,22 +88,73 @@ object Database {
 			maxWaitQueueSize = poolOpt["maxWaitQueueSize"]
 		))
 	}
+	val dsl = DSL.using(POSTGRES, Settings()
+		.withStatementType(StatementType.STATIC_STATEMENT))
 
+	suspend inline fun <reified T : Any> query(act: DSLContext.() -> ResultQuery<*>) = run {
+		val q = act.invoke(dsl)
+		client.preparedQuery(q.sql)
+			.executeAwait()
+			.map { it.mapTo(T::class) }
+	}
+
+	suspend inline fun transaction(act: Database.(Transaction) -> Unit) =
+		client.beginAwait().let { act.invoke(this, it) }
 
 	fun init(v: Vertx) {
 		this.vertx = v
 	}
 }
 
+/**
+ * BOOLEAN (java.lang.Boolean)
+ * INT2 (java.lang.Short)
+ * INT4 (java.lang.Integer)
+ * INT8 (java.lang.Long)
+ * FLOAT4 (java.lang.Float)
+ * FLOAT8 (java.lang.Double)
+ * CHAR (java.lang.String)
+ * VARCHAR (java.lang.String)
+ * TEXT (java.lang.String)
+ * ENUM (java.lang.String)
+ * NAME (java.lang.String)
+ * SERIAL2 (java.lang.Short)
+ * SERIAL4 (java.lang.Integer)
+ * SERIAL8 (java.lang.Long)
+ * NUMERIC (io.vertx.sqlclient.data.Numeric)
+ * UUID (java.util.UUID)
+ * DATE (java.time.LocalDate)
+ * TIME (java.time.LocalTime)
+ * TIMETZ (java.time.OffsetTime)
+ * TIMESTAMP (java.time.LocalDateTime)
+ * TIMESTAMPTZ (java.time.OffsetDateTime)
+ * INTERVAL (io.vertx.pgclient.data.Interval)
+ * BYTEA (io.vertx.core.buffer.Buffer)
+ * JSON (io.vertx.core.json.JsonObject, io.vertx.core.json.JsonArray, Number, Boolean, String, io.vertx.sqlclient.Tuple#JSON_NULL)
+ * JSONB (io.vertx.core.json.JsonObject, io.vertx.core.json.JsonArray, Number, Boolean, String, io.vertx.sqlclient.Tuple#JSON_NULL)
+ * POINT (io.vertx.pgclient.data.Point)
+ * LINE (io.vertx.pgclient.data.Line)
+ * LSEG (io.vertx.pgclient.data.LineSegment)
+ * BOX (io.vertx.pgclient.data.Box)
+ * PATH (io.vertx.pgclient.data.Path)
+ * POLYGON (io.vertx.pgclient.data.Polygon)
+ * CIRCLE (io.vertx.pgclient.data.Circle)
+ * TSVECTOR (java.lang.String)
+ * TSQUERY (java.lang.String)
+ * @receiver Row
+ * @param klz KClass<T>
+ * @return T?
+ */
 fun <T : Any> Row.mapTo(klz: KClass<T>) = when {
 	size() == 0 -> null
 	else -> klz.constructors.find { it.parameters.size == this.size() }?.let {
 		it.callBy(
 			it.parameters.associateWith { p ->
 				this.get(
-					(p.type.classifier as? KClass<*>)?.java ?: throw Throwable("unknown type to get"),
+					p.type.toJavaClass().javaObjectType,
 					p.index)
 			}
 		)
 	}
 }
+fun KType.toJavaClass()=(this.classifier as? KClass<*>)?: throw Throwable("unknown type to get")

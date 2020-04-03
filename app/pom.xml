@@ -31,6 +31,14 @@
     </profiles>
     <dependencies>
         <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq</artifactId>
+        </dependency>
+  <!--      <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq-codegen</artifactId>
+        </dependency>-->
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
         </dependency>
@@ -71,11 +79,11 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
-        <dependency>
+<!--        <dependency>
             <groupId>io.github.jklingsporn</groupId>
             <artifactId>vertx-jooq-generate</artifactId>
             <scope>runtime</scope>
-        </dependency>
+        </dependency>-->
 <!--        <dependency>
             <groupId>org.jetbrains.exposed</groupId>
             <artifactId>exposed-core</artifactId>
@@ -83,10 +91,10 @@
     </dependencies>
     <build>
         <plugins>
-            <!--			<plugin>
+            		<plugin>
                             <groupId>org.jooq</groupId>
                             <artifactId>jooq-codegen-maven</artifactId>
-                        </plugin>-->
+                        </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
