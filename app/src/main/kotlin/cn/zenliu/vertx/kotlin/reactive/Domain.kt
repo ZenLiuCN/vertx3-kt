@@ -1,27 +1,20 @@
 package cn.zenliu.vertx.kotlin.reactive
 
-import cn.zenliu.vertx.kotlin.AppLauncher
-import io.vertx.core.Vertx
-import io.vertx.kotlin.core.json.get
-import io.vertx.kotlin.pgclient.pgConnectOptionsOf
-import io.vertx.kotlin.sqlclient.beginAwait
-import io.vertx.kotlin.sqlclient.executeAwait
-import io.vertx.kotlin.sqlclient.poolOptionsOf
-import io.vertx.pgclient.PgPool
-import io.vertx.sqlclient.Pool
+import cn.zenliu.vertx.kotlin.*
+import io.vertx.core.*
+import io.vertx.kotlin.core.json.*
+import io.vertx.kotlin.pgclient.*
+import io.vertx.kotlin.sqlclient.*
+import io.vertx.pgclient.*
+import io.vertx.sqlclient.*
 import io.vertx.sqlclient.Row
-import io.vertx.sqlclient.SqlClient
 import io.vertx.sqlclient.Transaction
-import io.vertx.sqlclient.impl.ListTuple
-import kotlinx.coroutines.CoroutineScope
-import org.jooq.DSLContext
-import org.jooq.ResultQuery
-import org.jooq.SQLDialect.POSTGRES
-import org.jooq.conf.Settings
-import org.jooq.conf.StatementType
-import org.jooq.impl.DSL
-import kotlin.reflect.KClass
-import kotlin.reflect.KType
+import kotlinx.coroutines.*
+import org.jooq.*
+import org.jooq.SQLDialect.*
+import org.jooq.conf.*
+import org.jooq.impl.*
+import kotlin.reflect.*
 
 
 object Database {
@@ -147,14 +140,18 @@ object Database {
  */
 fun <T : Any> Row.mapTo(klz: KClass<T>) = when {
 	size() == 0 -> null
-	else -> klz.constructors.find { it.parameters.size == this.size() }?.let {
-		it.callBy(
-			it.parameters.associateWith { p ->
-				this.get(
-					p.type.toJavaClass().javaObjectType,
-					p.index)
-			}
-		)
-	}
+	else -> klz.constructors.find { it.parameters.size == this.size() }
+		?.let {
+			it.callBy(
+				it.parameters.associateWith { p ->
+					this.get(
+						p.type.toJavaClass().javaObjectType,
+						p.index)
+				}
+			)
+		}
 }
-fun KType.toJavaClass()=(this.classifier as? KClass<*>)?: throw Throwable("unknown type to get")
+
+fun <T : Any> RowSet<Row>.mapTo(klz: KClass<T>, byName: String) = this.map { }
+
+fun KType.toJavaClass() = (this.classifier as? KClass<*>) ?: throw Throwable("unknown type to get")
