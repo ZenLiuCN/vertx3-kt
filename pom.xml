@@ -46,7 +46,7 @@
 
         <mysql.version>8.0.19</mysql.version>
         <liquibase.version>3.8.7</liquibase.version>
-        <snakeyaml.version>1.12</snakeyaml.version>
+        <snakeyaml.version>1.26</snakeyaml.version>
         <sqlite.version>3.28.0</sqlite.version>
         <caffeine.version>2.8.1</caffeine.version>
         <junit.version>5.5.2</junit.version>
