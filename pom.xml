@@ -44,7 +44,7 @@
         <hikari.version>3.4.2</hikari.version>
 
 
-        <mysql.version>8.0.19</mysql.version>
+        <mysql.version>8.0.28</mysql.version>
         <liquibase.version>3.8.7</liquibase.version>
         <snakeyaml.version>1.26</snakeyaml.version>
         <sqlite.version>3.28.0</sqlite.version>
